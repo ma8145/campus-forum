@@ -1,0 +1,30 @@
+name: 自动解压源码
+on:
+  push:
+    paths:
+      - '*.zip'
+  workflow_dispatch:
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: 解压文件
+        run: |
+          ZIP_FILE=$(ls *.zip | head -1)
+          unzip -o "$ZIP_FILE"
+          if [ -d "campus-forum-deploy" ]; then
+            cp -r campus-forum-deploy/* .
+            cp -r campus-forum-deploy/.* . 2>/dev/null || true
+            rm -rf campus-forum-deploy
+          fi
+          rm -f "$ZIP_FILE"
+      - name: 提交到仓库
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "自动解压源码文件" || echo "无变化"
+          git push
