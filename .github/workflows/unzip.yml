@@ -1,0 +1,31 @@
+name: 自动解压源码
+on:
+  push:
+    paths:
+      - '*.yml'
+  workflow_dispatch:
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: 解压文件
+        run: |
+          ZIP_FILE=$(ls *.zip | head -1)
+          mkdir -p temp_extract
+          unzip -o "$ZIP_FILE" -d temp_extract
+          EXTRACT_DIR=$(find temp_extract -maxdepth 1 -type d | tail -1)
+          shopt -s dotglob
+          mv "$EXTRACT_DIR"/* .
+          shopt -u dotglob
+          rm -rf temp_extract
+          rm -f "$ZIP_FILE"
+      - name: 提交到仓库
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "自动解压源码文件" || echo "无变化"
+          git push
