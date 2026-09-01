@@ -13,15 +13,26 @@ jobs:
       - uses: actions/checkout@v4
       - name: 解压文件
         run: |
-          ZIP_FILE=$(ls *.zip | head -1)
-          mkdir -p temp_extract
-          unzip -o "$ZIP_FILE" -d temp_extract
-          EXTRACT_DIR=$(find temp_extract -maxdepth 1 -type d | tail -1)
-          shopt -s dotglob
-          mv "$EXTRACT_DIR"/* .
-          shopt -u dotglob
-          rm -rf temp_extract
+          set +e
+          echo "=== 当前目录内容 ==="
+          ls -la
+          ZIP_FILE=$(ls *.zip 2>/dev/null | head -1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "没有找到 zip 文件"
+            exit 0
+          fi
+          echo "=== 找到压缩包: $ZIP_FILE ==="
+          unzip -o "$ZIP_FILE"
+          echo "=== 解压后内容 ==="
+          ls -la
+          if [ -d "campus-forum-deploy" ]; then
+            echo "=== 移动文件到根目录 ==="
+            find campus-forum-deploy -mindepth 1 -maxdepth 1 -exec mv {} . \;
+            rm -rf campus-forum-deploy
+          fi
           rm -f "$ZIP_FILE"
+          echo "=== 最终内容 ==="
+          ls -la
       - name: 提交到仓库
         run: |
           git config --global user.name "github-actions[bot]"
